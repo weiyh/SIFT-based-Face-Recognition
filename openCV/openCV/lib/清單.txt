@@ -1,0 +1,51 @@
+ 磁碟區 H 中的磁碟是 LAB
+ 磁碟區序號:  7077-B949
+
+ H:\download\openCV\openCV\openCV\lib 的目錄
+
+2013/03/12  上午 10:18    <DIR>          .
+2013/03/12  上午 10:18    <DIR>          ..
+2013/03/02  上午 01:58            18,461 OpenCVConfig.cmake
+2013/03/02  上午 02:03           271,674 opencv_calib3d244.lib
+2013/03/02  上午 01:59           272,592 opencv_calib3d244d.lib
+2013/03/02  上午 02:03           449,900 opencv_contrib244.lib
+2013/03/02  上午 01:59           451,288 opencv_contrib244d.lib
+2013/03/02  上午 02:01           582,550 opencv_core244.lib
+2013/03/02  上午 01:58           584,416 opencv_core244d.lib
+2013/03/02  上午 02:03           422,120 opencv_features2d244.lib
+2013/03/02  上午 01:59           423,448 opencv_features2d244d.lib
+2013/03/02  上午 02:02           128,574 opencv_flann244.lib
+2013/03/02  上午 01:58           129,038 opencv_flann244d.lib
+2013/03/02  上午 02:04           539,636 opencv_gpu244.lib
+2013/03/02  上午 02:00           541,210 opencv_gpu244d.lib
+2013/03/02  上午 02:04           445,752 opencv_haartraining_engine.lib
+2013/03/02  上午 02:00         1,232,546 opencv_haartraining_engined.lib
+2013/03/02  上午 02:02           198,048 opencv_highgui244.lib
+2013/03/02  上午 01:59           198,728 opencv_highgui244d.lib
+2013/03/02  上午 02:02           316,558 opencv_imgproc244.lib
+2013/03/02  上午 01:58           317,604 opencv_imgproc244d.lib
+2013/03/02  上午 02:04           574,006 opencv_legacy244.lib
+2013/03/02  上午 01:59           576,070 opencv_legacy244d.lib
+2013/03/02  上午 02:02           274,820 opencv_ml244.lib
+2013/03/02  上午 01:58           275,624 opencv_ml244d.lib
+2013/03/02  上午 02:03           231,942 opencv_nonfree244.lib
+2013/03/02  上午 01:59           232,736 opencv_nonfree244d.lib
+2013/03/02  上午 02:02           292,294 opencv_objdetect244.lib
+2013/03/02  上午 01:59           293,676 opencv_objdetect244d.lib
+2013/03/02  上午 02:02           131,586 opencv_photo244.lib
+2013/03/02  上午 01:58           132,076 opencv_photo244d.lib
+2013/03/02  上午 02:04           688,626 opencv_stitching244.lib
+2013/03/02  上午 02:00           690,480 opencv_stitching244d.lib
+2013/03/02  上午 02:03           446,548 opencv_ts244.lib
+2013/03/02  上午 01:59           447,752 opencv_ts244d.lib
+2013/03/02  上午 02:02           197,976 opencv_video244.lib
+2013/03/02  上午 01:58           199,172 opencv_video244d.lib
+2013/03/02  上午 02:04           504,266 opencv_videostab244.lib
+2013/03/02  上午 02:00           506,038 opencv_videostab244d.lib
+2011/05/02  上午 12:41                18 檔名產生器.bat
+2013/03/12  上午 10:18                 0 清單.txt
+              39 個檔案      14,219,849 位元組
+
+     檔案數目總計:
+              39 個檔案      14,219,849 位元組
+               2 個目錄  650,592,083,968 位元組可用
