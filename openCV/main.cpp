@@ -1,3 +1,13 @@
+/* 
+
+Authors:	Yu-Han Wei, Ying-Hsuan Wang
+Date:		June, 2014
+Reference:	Luo, Jun, et al. 
+			"Person-specific SIFT features for face recognition." 
+			Acoustics, Speech and Signal Processing, 2007. ICASSP 2007. IEEE International Conference on. Vol. 2. IEEE, 2007.
+
+*/
+
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <opencv2/legacy/legacy.hpp>
@@ -20,42 +30,63 @@ using namespace cv::detail;
 
 void k_means();
 
-int k = 5;
+int k = 5;	// number of categories
 vector<Mat> rsubs;
 vector<vector<Point2f> > poly;
 
+// Calcultate Euclidean distance between two points
 double EuDistance(Point2f a, Point2f b)
 {
-	return sqrt( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) );
+	return sqrt( (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) );
 }
 
+// Check if new central points are as same as old central points
 bool check(Point2f old_center[], Point2f new_center[])
 {
-	for(int i=0; i<k; i++) {
+	for(int i = 0; i < k; ++i) {
 		if(old_center[i] != new_center[i])
 			return false;
 	}
 	return true;
 }
 
-float LocalSimilarity(float* x, float* y)
+// Calculate a part of local similarity d(x, y)
+// d(x, y) = (x, y) / (||x|| . ||y||)
+float LocalSimilarityD(float* x, float* y)
 {
-	float size_x=0, size_y=0;
-	for(int i=0; i<128; ++i)
+	float size_x = 0, size_y = 0;
+	for(int i = 0; i < 128; ++i)
 	{
-		size_x+=x[i]*x[i];
-		size_y+=y[i]*y[i];
+		size_x += x[i] * x[i];
+		size_y += y[i] * y[i];
 	}
-	size_x=sqrt(size_x);
-	size_y=sqrt(size_y);
+	size_x = sqrt(size_x);
+	size_y = sqrt(size_y);
 
-	float d=0;
-	for(int i=0; i<128; ++i)
-		d+=x[i]*y[i];
+	float d = 0;
+	for(int i = 0; i < 128; ++i)
+		d += x[i] * y[i];
 
-	return d/(size_x*size_y);
+	return d / (size_x * size_y);
 }
 
+// Local similarity = 1/k * SUM (1, k) (MAX(d(x, y)))
+float LocalSimilarity(vector<Mat> tsubs, vector<Mat> rsubs)
+{
+		
+		float local_sim = 0;	// total local similarity
+		for(int j = 0; j < k; ++j) //for every sub-region
+		{
+			float lsim = 0;	// temperate local similarity
+			for(int x = 0; x < tsubs[j].rows; ++x)
+				for(int y = 0; y < rsubs[j].rows; ++y)
+					lsim = max(lsim, LocalSimilarityD(tsubs[j].ptr<float>(x), rsubs[j].ptr<float>(y)));
+			local_sim += lsim;
+		}
+		return local_sim / (float)k;	// average local similarity
+}
+
+// K-means
 void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 {
 	int temp_random;
@@ -68,38 +99,22 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 	double min, d;
 	int r;
 
-	//srand(time(NULL));
-	//for(int i=0; i<k; i++) {
-	//	do {
-	//		repeat = false;
-	//		temp_random = (rand()%keypoints.size());       //(rand()%(b-a))+a : a ~ b-1
-	//		for(int j=0; j<i; j++){
-	//			if(keypoints[temp_random].pt == new_center[j]){
-	//				repeat = true;
-	//				break;
-	//			}
-	//		}
-	//	} while(repeat);
-	//	new_center[i] = keypoints[temp_random].pt;
-	//	region.push_back(temp_region);
-	//}
-
-	Point2f temp[5];
-	temp[0].x=15; temp[0].y=26;
-	temp[1].x=52; temp[1].y=26;
-	temp[2].x=34; temp[2].y=42;
-	temp[3].x=17; temp[3].y=63;
-	temp[4].x=48; temp[4].y=63;
-	for(int i=0; i<k; i++) {
+	Point2f temp[5];	// temperate positions of central points
+	temp[0].x = 15; temp[0].y = 26;
+	temp[1].x = 52; temp[1].y = 26;
+	temp[2].x = 34; temp[2].y = 42;
+	temp[3].x = 17; temp[3].y = 63;
+	temp[4].x = 48; temp[4].y = 63;
+	for(int i = 0; i < k; ++i) {
 		new_center[i] = temp[i];
 		region.push_back(temp_region);
 	}
 
 	do {
-		for(int i=0; i<keypoints.size(); i++) {
-			for(int j=0; j<k; j++) {
+		for(int i = 0; i < keypoints.size(); ++i) {
+			for(int j = 0; j < k; ++j) {
 				d = EuDistance(keypoints[i].pt, new_center[j]);
-				if(j==0) {
+				if(j == 0) {
 					min = d;
 					r = j;
 				}
@@ -111,10 +126,10 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 			region[r].push_back(keypoints[i]);
 		}
 		double sum_x, sum_y;
-		for(int i=0; i<k; i++) {
+		for(int i = 0; i < k; ++i) {
 			sum_x = 0;
 			sum_y = 0;
-			for(int j=0; j<region[i].size(); j++) {
+			for(int j = 0; j < region[i].size(); ++j) {
 				sum_x += region[i][j].pt.x;
 				sum_y += region[i][j].pt.y;
 			}
@@ -126,14 +141,6 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 			new_center[i] = avg;
 		}
 	} while(!check(old_center, new_center));
-
-	/*cout<<endl<<"k-means center :"<<endl;
-	for(int i=0; i<k; i++) {
-		cout<<new_center[i]<<endl;
-		line(feat, new_center[i], new_center[i], CV_RGB(255, 0, 0), 2, CV_AA);
-	}*/
-	/*imwrite( "output/feat4.bmp", feat );*/
-
 
 	Point2f polyPoint[12];
 	polyPoint[0]  = Point2f( 0, 0 );
@@ -150,14 +157,9 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 	polyPoint[10] = Point2f( (new_center[2].x*(polyPoint[8].y-new_center[2].y)+(SrcImg.rows-new_center[2].y)*(polyPoint[8].x-new_center[2].x))/(polyPoint[8].y-new_center[2].y), SrcImg.rows );
 	polyPoint[4]  = Point2f( 0, (new_center[2].y*(polyPoint[5].x-new_center[2].x)+(0-new_center[2].x)*(polyPoint[5].y-new_center[2].y))/(polyPoint[5].x-new_center[2].x) );
 	polyPoint[7]  = Point2f( SrcImg.cols, (new_center[2].y*(polyPoint[6].x-new_center[2].x)+(SrcImg.cols-new_center[2].x)*(polyPoint[6].y-new_center[2].y))/(polyPoint[6].x-new_center[2].x) );
-
-	/*for(int i=0; i<12; i++) {
-		line(feat, polyPoint[i], polyPoint[i], CV_RGB(0, 255, 0), 2, CV_AA);
-	}
-	imwrite( "output/feat4.bmp", feat );*/
 	
 	vector<Point2f> temp_poly;
-	for(int j=0; j<k; j++) {
+	for(int j = 0; j < k; ++j) {
 		switch(j) {
 			case 0:
 				temp_poly.push_back(polyPoint[0]);
@@ -200,20 +202,17 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 	}
 
 	vector<int> kpn[5];
-	for(int i=0; i<keypoints.size(); i++) {
-		for(int j=0; j<k; j++) {
-			if(pointPolygonTest(Mat(poly[j]), keypoints[i].pt, 1)>=0) {
-				//cout<<j<<" "<<pointPolygonTest(Mat(poly[j]), keypoints[i].pt, 1)<<endl;
+	for(int i = 0; i < keypoints.size(); ++i) {
+		for(int j = 0; j < k; ++j) {
+			if(pointPolygonTest(Mat(poly[j]), keypoints[i].pt, 1) >= 0) {
 				kpn[j].push_back(i);
 				break;
 			}
 		}
 	}
-	for(int i=0; i<k; i++) {
+	for(int i = 0; i < k; ++i) {
 		Mat subregion(kpn[i].size(), 128, CV_32FC1);
-		//cout<<endl<<"subregion "<<i<<" : ";
-		for(int j=0; j<kpn[i].size(); j++) {
-			//cout<<kpn[i][j]<<" ";
+		for(int j = 0; j < kpn[i].size(); ++j) {
 			descriptor.row(kpn[i][j]).copyTo(subregion.row(j));
 		}
 		rsubs.push_back(subregion);
@@ -223,93 +222,74 @@ void k_means(Mat &SrcImg, vector<KeyPoint> &keypoints, Mat &descriptor)
 
 int main(void)
 {
-	//	num of sub-regions in one image
+	//	Number of sub-regions in one image
 	int k=5;
 
-	//////////
-	//	compute global similarity
-	//////////
 	SiftFeatureDetector detector( 0.05, 5.0 );
 	SiftDescriptorExtractor extractor( 3.0 );
 
-	//	read the training image
-	Mat rImg=imread("./data/0.jpg");
+	//	Read the training image
+	Mat rImg = imread("./data/0.jpg");
 	normalize(rImg, rImg, 0, 255, CV_MINMAX, CV_8U);
 	vector<KeyPoint> rkey;
 	Mat rdes;
 	detector.detect(rImg, rkey);
 	extractor.compute(rImg, rkey, rdes);
 
-	//	k means
+	//	K-means
 	k_means(rImg, rkey, rdes);
 
-	//	read testing images
+	//	Read testing images
 	vector<Mat> tImgs;
-	int num=1;
+	int num = 1;
 	while(true)
 	{
 		char filename[100];
 		sprintf(filename, "./data/%d.jpg", num);
-		Mat Img=imread(filename, 1);
+		Mat Img = imread(filename, 1);
 		if(!Img.data)
 			break;
 		normalize(Img, Img, 0, 255, CV_MINMAX, CV_8U);
 		tImgs.push_back(Img);
-		num++;
+		++num;
 	}
 
-	//	feature of the training image
+	//	Obtain features of the training image
 	ImageFeatures rfeature;
-	rfeature.descriptors=rdes;
-	rfeature.img_idx=0;
-	rfeature.img_size=Size(rImg.cols, rImg.rows);
-	rfeature.keypoints=rkey;
-	//test
-	Mat feat;
-	drawKeypoints(rImg,rkey,feat,Scalar(255, 255, 255),DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-	imshow("train", feat);
-	//test
+	rfeature.descriptors = rdes;
+	rfeature.img_idx = 0;
+	rfeature.img_size = Size(rImg.cols, rImg.rows);
+	rfeature.keypoints = rkey;
 
-	//	matching
+	// Show training image with features
+	Mat feat;
+	drawKeypoints(rImg, rkey, feat, Scalar(255, 255, 255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+	imshow("train", feat);
+
+	//	Matching
 	vector<MatchesInfo> pairwise_matches;
 	vector<ImageFeatures> tfeatures;
-	vector<float> global_sims, local_sims;
-	float best_sim=0;
-	int best_img=0;
+	float best_sim = 0;
+	int best_img = 0;
 
-	for(int i=0; i<tImgs.size(); ++i)
+	for(int i = 0; i < tImgs.size(); ++i)
 	{
-		//	features of testing images
+		//	Features of testing images
 		vector<KeyPoint> key;
 		Mat des;
 		detector.detect(tImgs[i], key);
 		extractor.compute(tImgs[i], key, des);
-		//test
-		/*Mat feat;
-		drawKeypoints(tImgs[i],key,feat,Scalar(255, 255, 255),DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-		char str[5];
-		sprintf(str, "%d", i);
-		imshow(str, feat);*/
-		//test
 
 		ImageFeatures f;
-		f.descriptors=des;
-		f.img_idx=i;
-		f.img_size=Size(tImgs[i].cols,tImgs[i].rows);
-		f.keypoints=key;
+		f.descriptors = des;
+		f.img_idx = i;
+		f.img_size = Size(tImgs[i].cols,tImgs[i].rows);
+		f.keypoints = key;
 		tfeatures.push_back(f);
 
-		//	match training image with each testing image
-		/*BestOf2NearestMatcher matcher(false, 0.3);
-		MatchesInfo matchesInfo;
-		matcher(rfeature, tfeatures[i], matchesInfo);
-		pairwise_matches.push_back(matchesInfo);
-			
-
-		//	compute global similarity
-		float global_sim=(float)matchesInfo.matches.size()/(float)rdes.rows;*/
-
-		//test
+		//////////
+		//	Compute global similarity
+		//////////
 		BFMatcher matcher(NORM_L2);
 		vector<vector<DMatch> > matches;
 		vector<DMatch> good_matches;
@@ -322,84 +302,70 @@ int main(void)
 				good_matches.push_back(matches[i][0]);
 			}
 		}
-		float global_sim=(float)good_matches.size()/(float)rdes.rows;
-		//test
-		//test
-		cout<<"matches: "<</*matchesInfo.*/good_matches.size()<<endl;
+		float global_sim = (float)good_matches.size() / (float)rdes.rows;
+		
+
+		// Show matches
+		cout<<"matches: "<<good_matches.size()<<endl;
 		Mat mImg;
 		char str2[20];
 		sprintf(str2, "good%d", i);
-		drawMatches(rImg, rkey, tImgs[i], key, /*matchesInfo.*/good_matches, mImg);
+		drawMatches(rImg, rkey, tImgs[i], key, good_matches, mImg);
 		imshow(str2, mImg);
-		//test
 
 		//////////
-		//	get SIFT feature descriptors scattered in 5 sub-regions
+		//	Get SIFT feature descriptors scattered in 5 sub-regions
 		//////////
-		//	tsubs: testing, rsubs: training
+		//	tsubs: testing data; rsubs: training data
 		//	vector size = k = 5
 
 		vector<Mat> tsubs;
 
 		vector<int> kpn[5];
-		for(int i=0; i<key.size(); i++) {
-			for(int j=0; j<k; j++) {
-				if(pointPolygonTest(Mat(poly[j]), key[i].pt, 1)>=0) {
-					//cout<<j<<" "<<pointPolygonTest(Mat(poly[j]), keypoints[i].pt, 1)<<endl;
+		for(int i = 0; i < key.size(); ++i) {
+			for(int j = 0; j < k; ++j) {
+				if(pointPolygonTest(Mat(poly[j]), key[i].pt, 1) >= 0) {
 					kpn[j].push_back(i);
 					break;
 				}
 			}
 		}
-		for(int i=0; i<k; i++) {
+		for(int i = 0; i < k; ++i) {
 			Mat subregion(kpn[i].size(), 128, CV_32FC1);
 			cout<<"subregion "<<i<<" : ";
-			for(int j=0; j<kpn[i].size(); j++) {
+			for(int j = 0; j < kpn[i].size(); ++j) 
+			{
 				cout<<kpn[i][j]<<" ";
 				des.row(kpn[i][j]).copyTo(subregion.row(j));
-			}cout<<endl;
+			}
+			cout<<endl;
 			tsubs.push_back(subregion);
 		}
-
-
 
 
 		//////////
 		//	Compute local similarity
 		//////////
+		// Local similarity = 1/k * SUM (1, k) (MAX(d(x, y))), d = (x, y) / (||x|| . ||y||)
 
-		//test
-		/*k=1;
-		tsubs.resize(k);
-		rsubs.resize(k);*/
-		//test
-		float local_sim=0;
-		for(int j=0; j<k; ++j) //for every sub-region
+		float local_sim = LocalSimilarity(tsubs, rsubs);
+
+
+		//////////
+		//	Compute final similarity
+		//////////
+
+		float final_sim = global_sim * local_sim;	// final smilarity (including local and global similarity)  
+		cout<<"sim="<<final_sim<<" "<<global_sim<<" "<<local_sim<<endl<<endl;
+		
+		if(final_sim > best_sim)
 		{
-			//test
-			/*tsubs[j]=des.clone();
-			rsubs[j]=rdes.clone();*/
-			//test
-			float lsim=0;
-			for(int x=0; x<tsubs[j].rows; ++x)
-				for(int y=0; y<rsubs[j].rows; ++y)
-				{
-					float temp=LocalSimilarity(tsubs[j].ptr<float>(x), rsubs[j].ptr<float>(y));
-					lsim=max(lsim, temp);
-				}
-			local_sim+=lsim;
-		}
-		local_sim=local_sim/(float)k;
-		float final_sim=global_sim*local_sim; cout<<"sim="<<final_sim<<" "<<global_sim<<" "<<local_sim<<endl<<endl;
-		if(final_sim>best_sim)
-		{
-			best_sim=final_sim;
-			best_img=i+1;
+			best_sim = final_sim;
+			best_img = i + 1;
 		}
 	}
 	cout<<"The best matched image is "<<best_img<<". similarity: "<<best_sim<<endl;
 
-	//system("pause");
 	waitKey(0);
 	return 0;
 }
