@@ -11,7 +11,12 @@ Luo, Jun, et al. "Person-specific SIFT features for face recognition." *Acoustic
 It's a Visual Studio Project. You can see the sample training and testing images in `../openCV/bin/Release/data/`, where 0.jpg is the testing data and 1.jpg-5.jpg are the training datas.  
 The output of this program is showing which training image is most similar to the testing image.
   
-  
+
+## Output
+![](https://github.com/weiyh/SIFT-based-Face-Recognition/blob/master/demo1.png)
+![](https://github.com/weiyh/SIFT-based-Face-Recognition/blob/master/demo2.png)
+
+
 ## Authors
 Yu-Han Wei, Ying-Hsuan Wang
 
